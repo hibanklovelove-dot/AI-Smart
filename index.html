@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Chat</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    background:#212121;
+    color:#ececec;
+    font-family:Segoe UI,sans-serif;
+    height:100vh;
+    overflow:hidden;
+}
+
+#welcome{
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    font-size:32px;
+    color:#8f8f8f;
+    font-weight:500;
+    transition:.3s;
+    user-select:none;
+}
+
+#messages{
+    height:calc(100vh - 100px);
+    overflow-y:auto;
+    padding:30px;
+    display:none;
+}
+
+.chat{
+    max-width:850px;
+    margin:auto;
+}
+
+.message{
+    margin-bottom:30px;
+}
+
+.user{
+    font-weight:700;
+    margin-bottom:10px;
+}
+
+.ai{
+    line-height:1.8;
+    color:#d7d7d7;
+}
+
+.input-area{
+    position:fixed;
+    bottom:20px;
+    left:50%;
+    transform:translateX(-50%);
+    width:min(900px,95%);
+}
+
+.input-box{
+    display:flex;
+    align-items:center;
+
+    background:#2f2f2f;
+    border-radius:28px;
+    padding:8px;
+}
+
+input{
+    flex:1;
+    background:none;
+    border:none;
+    color:white;
+    padding:14px;
+    font-size:16px;
+}
+
+input:focus{
+    outline:none;
+}
+
+button{
+    width:46px;
+    height:46px;
+    border:none;
+    border-radius:50%;
+    background:white;
+    cursor:pointer;
+    font-size:18px;
+}
+
+button:hover{
+    opacity:.9;
+}
+
+::-webkit-scrollbar{
+    width:8px;
+}
+
+::-webkit-scrollbar-thumb{
+    background:#3e3e3e;
+    border-radius:20px;
+}
+
+</style>
+</head>
+<body>
+
+<div id="welcome">
+    คนโง่จะถาม
+</div>
+
+<div id="messages">
+    <div class="chat" id="chat"></div>
+</div>
+
+<div class="input-area">
+
+    <div class="input-box">
+
+        <input
+        id="input"
+        placeholder="ส่งข้อความหาคนฉลาด"
+        autocomplete="off">
+
+        <button onclick="sendMessage()">↑</button>
+
+    </div>
+
+</div>
+
+<script>
+
+const customResponses = {
+
+    "สวัสดี":
+    "อ้าว ยังอยู่เหรอ",
+
+    "ชื่ออะไร":
+    "ถามชื่อไปจะเอาไปทำอะไร",
+
+    "กินไรดี":
+    "อะไรก็ได้ที่ไม่ใช่สายชาร์จ",
+
+    "infjคืออะไร":
+    "INFJ คือไรลองไปถามพ่อถามแม่มึงดู",
+
+    "รักนะ":
+    "โอเค รับทราบ แล้วมีสาระกว่านี้ไหม"
+};
+
+const randomReplies = [
+
+"อ๋อ",
+"อือ",
+"แล้วไง",
+"โอเคมั้ง",
+"ก็ได้",
+"ห๊ะ",
+"เอาที่สบายใจ",
+"พอใจยัง",
+"คิดนานไหมเนี่ย",
+"เก่งมากมั้ง",
+"สุดยอดเลยมั้ง",
+"โอ้โห",
+"เออ",
+"จริงดิ",
+"แล้ว",
+"ต่อ",
+"น่าสนใจมาก ถ้าข้านอนอยู่",
+"โลกยังหมุนต่อ",
+"โอเค จบยัง",
+"มั่นใจดีนะ",
+"ข้าควรดีใจไหม",
+"แปลกดี",
+"ไม่แปลกละ",
+"พยายามต่อไป",
+"เกือบแล้ว",
+"อีกนิดเดียว",
+"นี่คือบทสรุปทั้งหมดเหรอ",
+"เข้าใจละ",
+"ไม่เข้าใจดีกว่า",
+"สมกับที่เป็นเจ้า",
+"ฟังแล้วเหนื่อย",
+"ขอพักก่อน",
+"แป๊บนึง กำลังทำใจ",
+"คำถามแห่งยุค",
+"ยุคที่ไม่มีคู่แข่ง",
+"โอเคถ้างั้น",
+"นี่คิดแล้วเหรอ",
+"โอ๊ย",
+"เรื่องของเจ้า",
+"ก็เอาดิ",
+"ทำไมล่ะ",
+"ไม่รู้สิ",
+"แล้วแต่",
+"ขาดข้อมูล",
+"ถามแปลกดี",
+"เก็บไว้เป็นความลับเถอะ",
+"ฟังดูไม่ค่อยรอด",
+"เริ่มกังวลแล้ว",
+"อืมมม",
+"โอเคครับ... อ้าวลืมตัว",
+"จะเอางั้นจริงดิ",
+"ก็ถามมาได้",
+"เป็นไปได้",
+"เป็นไปไม่ได้ก็ช่าง",
+"โอเคนะ ไม่โอเคก็ช่าง",
+"นี่คือทางเลือกที่ดีที่สุดแล้วเหรอ",
+"ข้าคาดหวังมากไปเอง",
+"ชีวิตเจ้าดูน่าสนใจดี",
+"นิดเดียว",
+"เข้าใจปัญหาละ",
+"ปัญหาคืออะไรไม่บอก",
+"พิมพ์ออกมาได้ไงก่อน",
+"นี่จริงจังหรือเล่น",
+"ช่วยยากนะ",
+"ขอผ่าน",
+"ไปต่อ",
+"อ่านแล้วเงียบดีกว่า",
+"โอเค ไม่เถียง",
+"เริ่มปวดหัว",
+"ดีใจด้วยมั้ง",
+"เสียใจด้วยมั้ง",
+"ก็ประมาณนั้น",
+"มากกว่านั้นนิดหน่อย",
+"น้อยกว่านั้นเยอะ",
+"ทำต่อไป",
+"อย่าทำต่อเลย",
+"โอเค เอาที่สบายใจ"
+];
+
+const input = document.getElementById("input");
+
+input.addEventListener("keydown", function(e){
+    if(e.key==="Enter"){
+        sendMessage();
+    }
+});
+
+function getReply(text){
+
+    const key = text.toLowerCase();
+
+    if(customResponses[key]){
+        return customResponses[key];
+    }
+
+    return randomReplies[
+        Math.floor(Math.random()*randomReplies.length)
+    ];
+}
+
+function sendMessage(){
+
+    const text = input.value.trim();
+
+    if(!text) return;
+
+    document.getElementById("welcome").style.display="none";
+    document.getElementById("messages").style.display="block";
+
+    const chat = document.getElementById("chat");
+
+    chat.innerHTML += `
+        <div class="message">
+            <div class="user">คุณ</div>
+            <div>${text}</div>
+        </div>
+
+        <div class="message">
+            <div class="user">AI</div>
+            <div class="ai">${getReply(text)}</div>
+        </div>
+    `;
+
+    input.value="";
+
+    const messages=document.getElementById("messages");
+    messages.scrollTop=messages.scrollHeight;
+}
+
+</script>
+
+</body>
+</html>
